@@ -23,6 +23,7 @@ DATA_PATH = f"{working_dic}/{config_file['data_path']}"
 # Save the API key to environment variable
 os.environ['GROQ_API_KEY'] = groq_api_key
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
 # Create the LLM client 
 client = Groq()

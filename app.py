@@ -13,6 +13,9 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning, module="transformers.tokenization_utils_base")
+
 # Load config file
 working_dic = os.path.dirname(os.path.abspath(__file__))
 config_file = json.load(open(f"{working_dic}/config.json"))
@@ -170,6 +173,6 @@ else:
         rob_response = response.choices[0].message.content
         
         # Display the response   
-        st.chat_message("assistant", avatar = f"{working_dic}/images/confused_dog.gif").markdown(response)
+        st.chat_message("assistant", avatar = f"{working_dic}/images/confused_dog.gif").markdown(rob_response)
         st.session_state.chat_history.append({"role": "assistant", "content": rob_response})
         

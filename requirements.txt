@@ -10,5 +10,4 @@ langchain-huggingface==0.0.3
 langchain-text-splitters==0.2.2
 protobuf==3.20.3
 pillow==10.4.0
-pypdf==4.3.1
-pysqlite3-binary 
+pysqlite3-binary 0.5.3

@@ -1,6 +1,6 @@
-# __import__('pysqlite3')
-# import sys
-# sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 
 import json
@@ -20,6 +20,7 @@ from langchain_chroma import Chroma
 
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning, module="transformers.tokenization_utils_base")
+
 
 # Load config file
 working_dic = os.path.dirname(os.path.abspath(__file__))

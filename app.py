@@ -82,9 +82,6 @@ if use_pdf_query_mode:
         avatar_path = f"{working_dic}/images/confused_dog.gif" if message["role"] == "user" else f"{working_dic}/images/westie.png"
         st.chat_message(message["role"], avatar=avatar_path).markdown(message["content"])
         
-            
-    # if len(st.session_state.chat_history) == 0:
-    #     st.chat_message("assistant", avatar=f"{working_dic}/images/westie.png").markdown("Please upload a file!~!")
     
     if user_uploaded_files:
       
@@ -112,6 +109,11 @@ if use_pdf_query_mode:
                 
 
         new_files = [file for file in user_uploaded_files if file.name not in st.session_state.uploaded_files]
+        
+        
+        # Check if the directory exists, if not, create it
+        if not os.path.exists(DATA_PATH):
+            os.makedirs(DATA_PATH)
 
         if new_files:
             for user_uploaded_file in new_files:

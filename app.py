@@ -87,11 +87,8 @@ if use_pdf_query_mode:
     #     st.chat_message("assistant", avatar=f"{working_dic}/images/westie.png").markdown("Please upload a file!~!")
     
     if user_uploaded_files:
-        
-        # Buttons for clearing chat history
-        st.button("Clear Chat History", on_click=st.session_state.chat_history.clear)
-        
-        # Buttons for clearing the database
+      
+        # Button for clearing the database and chat history
         if st.button("Clear Uploaded Data"):
             try:
                 # Clear uploaded files and session state
@@ -99,17 +96,19 @@ if use_pdf_query_mode:
                 st.session_state.uploaded_files.clear()
                 clear_chroma_and_file()  # Custom function for additional clearing
 
-                # Notify user
+                # Clear chat history
+                st.session_state.chat_history.clear()
+
+                # Notify user of success
                 message_container = st.empty()
-                message_container.success("✅ Database Cleared Successfully!")
+                message_container.success("✅ Database and Chat History Cleared Successfully!")
                 time.sleep(2)  # Temporary message display
                 message_container.empty()
+                st.rerun()
 
-                # Clear chat history
-                st.session_state.chat_history = []
-                
             except Exception as e:  
-                st.error(f"❌ The database is empty")
+                st.error(f"❌ The database is empty or an error occurred")
+
                 
 
         new_files = [file for file in user_uploaded_files if file.name not in st.session_state.uploaded_files]

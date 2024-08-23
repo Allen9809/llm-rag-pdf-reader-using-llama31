@@ -110,7 +110,11 @@ if use_pdf_query_mode:
         
     
     if user_uploaded_files:
-
+    
+        # Ensure the DATA_PATH directory exists
+        if not os.path.exists(DATA_PATH):
+            os.makedirs(DATA_PATH)
+            
         # only write new files into the data folder and DB 
         new_files = [file for file in user_uploaded_files if file.name not in st.session_state.uploaded_files]
 

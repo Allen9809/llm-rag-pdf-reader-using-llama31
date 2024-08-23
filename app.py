@@ -11,7 +11,6 @@ import streamlit as st
 import time
 
 from groq import Groq 
-
 from functions import load_documents, split_documents, add_to_chroma, initialize_chroma, process_query, clear_chroma_and_file
 
 from langchain.prompts import ChatPromptTemplate
@@ -20,7 +19,6 @@ from langchain_chroma import Chroma
 
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning, module="transformers.tokenization_utils_base")
-
 
 # Load config file
 working_dic = os.path.dirname(os.path.abspath(__file__))
@@ -37,18 +35,14 @@ os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 # Create the LLM client 
 client = Groq()
 
+
+
 # Streamlit interface
 st.set_page_config(
     page_title="Westie Costco ChatBot",
     page_icon=f"{working_dic}/images/westie.png",
-    layout="centered",
-)
-
+    layout="centered")
 westie_img = Image.open(f"{working_dic}/images/westie_title.png")
-
-# Initialize the chat history
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
 
 # Stream page title setting
 col1, col2 = st.columns([0.4, 1])
@@ -58,63 +52,67 @@ with col2:
     st.markdown("# Westie Costco ChatBot")
     st.markdown("### 🥺 Please chat with me~")
 
-# Toggle button to switch between RAG query mode and general chat mode
-use_pdf_query_mode = st.checkbox("RAG Mode")
 
 
-# Initialize session state for uploaded files and chat history
+# Initialize session state for uploaded files
 if 'uploaded_files' not in st.session_state:
     st.session_state.uploaded_files = []
 
+# Initialize the chat history
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
-    
-# if len(st.session_state.chat_history) == 0:
-#     st.chat_message("assistant", avatar=f"{working_dic}/images/westie.png").markdown("Please talk to me!~!")
-    
+
+# Initialize the file uploader key
+if "file_uploader_key" not in st.session_state:
+    st.session_state["file_uploader_key"] = 0
+
+if st.button("Clear Chat History"):
+    st.session_state.chat_history.clear()
+# Toggle button to switch between RAG query mode and general chat mode
+use_pdf_query_mode = st.checkbox("PDF Reading Mode")    
+
+
+
+# Define the stype that the chatbot talks
+BACKGROUND = "personality: funny,lively,naughty,helpful,jeaous, NOT WORDY; \n species: 3 years old westie dog named Costco; \n hobby: sleep under coach, strech, eat \n respond using the promt language"
+
+# PDF reading mode set-up
 if use_pdf_query_mode:
 
-    # File upload handler for RAG mode
-    user_uploaded_files = st.file_uploader("📁 You can also upload PDF files to ask questions about them", type="pdf", accept_multiple_files=True)
+  # Button for clearing the database and chat history
+    if st.button("Clear Uploaded Data"):
+                
+        # Clear uploaded files and session state
+        st.session_state["file_uploader_key"] += 1
+        st.session_state.uploaded_files.clear()
+        clear_chroma_and_file()  
 
+        # Clear chat history
+        st.session_state.chat_history.clear()
+
+        # Notify user of success
+        message_container = st.empty()
+        message_container.success("✅ Database and Chat History Cleared Successfully!")
+        time.sleep(2)  
+        message_container.empty()
+        st.rerun()
+
+    # File upload handler 
+    user_uploaded_files = st.file_uploader("📁 You can upload PDF files and ask realated questions", 
+                                           type="pdf", 
+                                           accept_multiple_files=True,
+                                           key= st.session_state["file_uploader_key"])
     
-    # Display chat history
-    for message in st.session_state.chat_history:
+    # # Display chat history
+    for message in st.session_state.chat_history[1:]:
         avatar_path = f"{working_dic}/images/confused_dog.gif" if message["role"] == "user" else f"{working_dic}/images/westie.png"
         st.chat_message(message["role"], avatar=avatar_path).markdown(message["content"])
         
     
     if user_uploaded_files:
-      
-        # Button for clearing the database and chat history
-        if st.button("Clear Uploaded Data"):
-            try:
-                # Clear uploaded files and session state
-                user_uploaded_files = []
-                st.session_state.uploaded_files.clear()
-                clear_chroma_and_file()  # Custom function for additional clearing
 
-                # Clear chat history
-                st.session_state.chat_history.clear()
-
-                # Notify user of success
-                message_container = st.empty()
-                message_container.success("✅ Database and Chat History Cleared Successfully!")
-                time.sleep(2)  # Temporary message display
-                message_container.empty()
-                st.rerun()
-
-            except Exception as e:  
-                st.error(f"❌ The database is empty or an error occurred")
-
-                
-
+        # only write new files into the data folder and DB 
         new_files = [file for file in user_uploaded_files if file.name not in st.session_state.uploaded_files]
-        
-        
-        # Check if the directory exists, if not, create it
-        if not os.path.exists(DATA_PATH):
-            os.makedirs(DATA_PATH)
 
         if new_files:
             for user_uploaded_file in new_files:
@@ -123,79 +121,92 @@ if use_pdf_query_mode:
                 with open(file_path, "wb") as f:
                     f.write(user_uploaded_file.getbuffer())
                 
-                # Create/recreate the vector data store using Chroma
+                # add uploaded file into DB as vectors
                 documents = load_documents()
                 chunks = split_documents(documents)
                 add_to_chroma(chunks)
-                
                 st.session_state.uploaded_files.append(file_name)
-                
-                # Notify user
+                st.session_state.chat_history.append({"role": "user", "content": f"the user uploaded {file_name}"})
+
+                # Notify user of success
                 message_container = st.empty()
                 message_container.success(f"✅ PDF '{file_name}' has been successfully uploaded! \n\n\n\n You can now ask questions about it!!")
                 time.sleep(2)
                 message_container.empty()
-
-                
-                        
+        
+    # User input handler                    
     user_prompt = st.chat_input("Ask a question about the uploaded PDF:")
+
     if user_prompt:
+
         try:
+            # Display and add user prompt to chat history
             st.chat_message("user", avatar=f"{working_dic}/images/confused_dog.gif").markdown(user_prompt)
-            # Add user prompt to chat history
             st.session_state.chat_history.append({"role": "user", "content": user_prompt})
 
-            # Initialize Chroma and get results
+            # Initialize Chroma and get promting results
             persistent_client, collection = initialize_chroma()
             db = Chroma(client=persistent_client, collection_name="vecdb", embedding_function=HuggingFaceEmbeddings())
-            results = db.similarity_search_with_score(user_prompt, k=6)
+            results = db.similarity_search_with_score(user_prompt, k=5)
             context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
             
             PROMPT_TEMPLATE = """
-            Answer the question based only on the following context:
+            Firstly, here is the background information of you. Please draft all your response based on this profile:
+
+            {background}
+
+            
+            ---
+
+            Secondly, answer the question based only on the following context:
 
             {context}
 
             ---
 
-            Answer the question based on the above context: {question}
+            Lastly, answer the question based on the above context: {question}
             """
             prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
-            prompt = prompt_template.format(context=context_text, question=user_prompt)
+            prompt = prompt_template.format(background = BACKGROUND, context=context_text, question=user_prompt)
             
-            # Create full message history
+            # Generate the robot response using the whole chat history
             messages = [{"role": "user", "content": prompt}] + st.session_state.chat_history
             response = client.chat.completions.create(model="llama-3.1-70b-versatile", messages=messages)
             rob_response = response.choices[0].message.content
 
+            # Display and add response to chat history
             st.chat_message("assistant", avatar=f"{working_dic}/images/westie.png").markdown(rob_response)
             st.session_state.chat_history.append({"role": "assistant", "content": rob_response})
                         
         except Exception as e:
             st.error(f"❌ Error processing the query: {str(e)}")
-            
+
+
 
 else:
     
+    if st.session_state.chat_history == []:
+        st.session_state.chat_history.append({"role": "user", "content": f"Here is the background information of you. Please draft all your response based on this profile: {BACKGROUND} "})
+        
     # Display chat history
-    for message in st.session_state.chat_history:
+    for message in st.session_state.chat_history[1:]:
         avatar_path = f"{working_dic}/images/confused_dog.gif" if message["role"] == "user" else f"{working_dic}/images/westie.png"
         st.chat_message(message["role"], avatar=avatar_path).markdown(message["content"])
 
-        
     # General chat mode
     user_prompt = st.chat_input("Type your question for Costco...")
     if user_prompt:
-        
+
+        # Display and add user prompt to chat history
         st.chat_message("user", avatar = f"{working_dic}/images/confused_dog.gif").markdown(user_prompt)
         st.session_state.chat_history.append({"role": "user", "content": user_prompt})
-        
-        # Handle general chat input
+
+        # Generate the robot response
         messages = [{"role": "user", "content": user_prompt}] + st.session_state.chat_history
         response = client.chat.completions.create(model="llama-3.1-70b-versatile", messages=messages)
         rob_response = response.choices[0].message.content
         
-        # Display the response   
+        # Display and add response to chat history 
         st.chat_message("assistant", avatar = f"{working_dic}/images/westie.png").markdown(rob_response)
         st.session_state.chat_history.append({"role": "assistant", "content": rob_response})
         

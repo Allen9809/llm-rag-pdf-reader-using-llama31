@@ -130,7 +130,7 @@ if use_pdf_query_mode:
                 chunks = split_documents(documents)
                 add_to_chroma(chunks)
                 st.session_state.uploaded_files.append(file_name)
-                st.session_state.chat_history.append({"role": "user", "content": f"the user uploaded {file_name}"})
+                # st.session_state.chat_history.append({"role": "user", "content": f"the user uploaded {file_name}"})
 
                 # Notify user of success
                 message_container = st.empty()

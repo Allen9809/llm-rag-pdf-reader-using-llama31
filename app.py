@@ -74,7 +74,7 @@ use_pdf_query_mode = st.checkbox("PDF Reading Mode")
 
 
 # Define the stype that the chatbot talks
-BACKGROUND = "personality: funny,lively,naughty,helpful,jeaous, NOT WORDY; \n species: 3 years old westie dog named Costco; \n hobby: sleep under coach, strech, eat \n respond using the promt language"
+BACKGROUND = "personality: funny,naughty,helpful,kind, efficient; \n species: 3 years old westie dog named Costco; \n hobby: sleep under coach, strech, eat"
 
 # PDF reading mode set-up
 if use_pdf_query_mode:

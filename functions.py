@@ -28,8 +28,8 @@ def split_documents(documents):
     This helps in processing documents more efficiently.
     """
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=800,
-        chunk_overlap=100,
+        chunk_size=300,
+        chunk_overlap=50,
         length_function=len,
         is_separator_regex=False,
     )
